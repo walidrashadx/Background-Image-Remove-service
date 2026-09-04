@@ -385,14 +385,8 @@ function Dropzone({ onFile }) {
   const ref = useRef(null);
   const [drag, setDrag] = useState(false);
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <label
       className={`flex h-full min-h-[420px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed transition ${drag ? "border-blue-400 bg-blue-400/5" : "border-white/10 bg-white/[0.015] hover:border-white/20"}`}
-      onClick={() => ref.current?.click()}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") ref.current?.click();
-      }}
       onDragOver={(e) => {
         e.preventDefault();
         setDrag(true);
@@ -415,7 +409,7 @@ function Dropzone({ onFile }) {
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0])}
       />
-    </div>
+    </label>
   );
 }
 
