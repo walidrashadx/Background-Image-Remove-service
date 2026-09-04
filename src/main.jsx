@@ -5,7 +5,6 @@ import {
   Image as ImageIcon,
   Pipette,
   Upload,
-  Zap,
   Download,
   RotateCcw,
   ShieldCheck,
@@ -145,7 +144,7 @@ function App() {
     if (!hasImage) return;
     const canvas = previewCanvasRef.current;
     const a = document.createElement("a");
-    const base = fileName.replace(/\.[^/.]+$/, "") || "pureeraser";
+    const base = fileName.replace(/\.[^/.]+$/, "") || "fast-eraser";
     a.download = `${base}-transparent.png`;
     a.href = canvas.toDataURL("image/png");
     a.click();
@@ -176,10 +175,12 @@ function App() {
         <aside className="sidebar flex w-[310px] shrink-0 flex-col px-6 py-7">
           <div className="brand flex items-center gap-3">
             <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl">
-              <Zap size={22} fill="currentColor" />
+              <span className="brand-monogram">WR</span>
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-white">PureEraser</div>
+              <div className="text-xl font-bold tracking-tight text-white">
+                Fast Eraser
+              </div>
               <div className="text-xs text-slate-400">Background remover</div>
             </div>
           </div>
@@ -187,7 +188,9 @@ function App() {
           <div className="sidebar-content mt-10 space-y-8">
             <section>
               <div className="section-title">REMOVE COLOR</div>
-              <p className="control-hint">Choose the color you want to make transparent.</p>
+              <p className="control-hint">
+                Choose the color you want to make transparent.
+              </p>
               <div className="color-control mt-3 flex items-center gap-3">
                 <div
                   className="color-swatch h-11 w-11 shrink-0 rounded-lg"
@@ -216,7 +219,9 @@ function App() {
                 <span>TOLERANCE</span>
                 <span className="value-pill font-mono">{tolerance}</span>
               </div>
-              <p className="control-hint">Fine-tune how much of the background is removed.</p>
+              <p className="control-hint">
+                Fine-tune how much of the background is removed.
+              </p>
               <input
                 aria-label="Tolerance"
                 type="range"
@@ -261,11 +266,19 @@ function App() {
         <main className="main-shell flex min-w-0 flex-1 flex-col p-6">
           <div className="topbar mb-5 flex items-center justify-between">
             <div>
-              <div className="eyebrow"><Sparkles size={13} /> QUICK EDITOR</div>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">Make the background disappear.</h1>
-              <p className="mt-1 text-sm text-slate-400">A fast, private way to remove solid-color backgrounds.</p>
+              <div className="eyebrow">
+                <Sparkles size={13} /> QUICK EDITOR
+              </div>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+                Make the background disappear.
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                A fast, private way to remove solid-color backgrounds.
+              </p>
             </div>
-            <label className="action-primary cursor-pointer" title="Upload an image">
+            <label
+              className="action-primary cursor-pointer"
+              title="Upload an image">
               <Upload size={16} />
               Upload Image
               <input
@@ -313,8 +326,12 @@ function App() {
                     <div className="empty-icon mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full">
                       <ImageIcon size={20} />
                     </div>
-                    <p className="text-sm font-medium text-slate-300">Your transparent preview will appear here.</p>
-                    <p className="mt-1 text-xs text-slate-500">Upload an image to get started.</p>
+                    <p className="text-sm font-medium text-slate-300">
+                      Your transparent preview will appear here.
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Upload an image to get started.
+                    </p>
                   </div>
                 )}
               </div>

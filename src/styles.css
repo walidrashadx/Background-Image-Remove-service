@@ -26,8 +26,16 @@ label {
 
 .app-shell {
   background:
-    radial-gradient(circle at 88% 0%, rgba(61, 218, 190, 0.13), transparent 30rem),
-    radial-gradient(circle at 10% 100%, rgba(255, 157, 100, 0.08), transparent 26rem),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(61, 218, 190, 0.13),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 10% 100%,
+      rgba(255, 157, 100, 0.08),
+      transparent 26rem
+    ),
     linear-gradient(135deg, #08151f 0%, #0d2130 52%, #08151f 100%);
 }
 .app-layout {
@@ -48,6 +56,12 @@ label {
   box-shadow:
     0 0 0 1px rgba(115, 228, 197, 0.24),
     0 12px 30px rgba(38, 184, 157, 0.14);
+}
+.brand-monogram {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  line-height: 1;
 }
 .sidebar-content {
   max-width: 260px;
