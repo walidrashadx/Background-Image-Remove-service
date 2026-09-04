@@ -58,7 +58,11 @@ function sampleBorderColor(img) {
     return sorted[Math.floor(sorted.length / 2)];
   };
 
-  return rgbToHex(median(channels[0]), median(channels[1]), median(channels[2]));
+  return rgbToHex(
+    median(channels[0]),
+    median(channels[1]),
+    median(channels[2]),
+  );
 }
 
 function enqueueIfUnvisited(queue, visited, x, y, width, queueEnd) {
@@ -130,7 +134,7 @@ function App() {
   const [fileName, setFileName] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [target, setTarget] = useState("#FFFFFF");
-  const [tolerance, setTolerance] = useState(18);
+  const [tolerance, setTolerance] = useState(10);
   const [status, setStatus] = useState("Ready to export");
   const [hasImage, setHasImage] = useState(false);
 
@@ -160,7 +164,7 @@ function App() {
     out.data.set(src.data);
     const t = hexToRgb(color);
 
-    const threshold = tol * 2.55;
+    const threshold = tol * 1.5;
     floodFillBackground(src, out, w, h, t, threshold);
     pctx.putImageData(out, 0, 0);
     setStatus("Ready to export");
@@ -186,9 +190,7 @@ function App() {
         const sampledColor = sampleBorderColor(img);
         setTarget(sampledColor);
         setHasImage(true);
-        requestAnimationFrame(() =>
-          processImage(img, sampledColor, tolerance),
-        );
+        requestAnimationFrame(() => processImage(img, sampledColor, tolerance));
       };
       img.onerror = () => {
         URL.revokeObjectURL(url);
@@ -322,7 +324,7 @@ function App() {
                 <span className="value-pill font-mono">{tolerance}</span>
               </div>
               <p className="control-hint">
-                Fine-tune how much of the background is removed.
+                Lower values remove only close matches to the selected color.
               </p>
               <input
                 aria-label="Tolerance"
