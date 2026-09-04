@@ -73,7 +73,7 @@ function App() {
     const t = hexToRgb(color);
 
     // Euclidean RGB distance: sqrt((r-tr)^2 + (g-tg)^2 + (b-tb)^2)
-    const threshold = tol * Math.sqrt(3 * 255 * 255);
+    const threshold = (tol / 100) * Math.sqrt(3 * 255 * 255);
 
     for (let i = 0; i < src.data.length; i += 4) {
       const dr = src.data[i] - t.r;
@@ -108,7 +108,7 @@ function App() {
         c.width = 1;
         c.height = 1;
         const ctx = c.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0, 1, 1);
+        ctx.drawImage(img, 0, 0);
         const px = ctx.getImageData(0, 0, 1, 1).data;
         setTarget(rgbToHex(px[0], px[1], px[2]));
         setHasImage(true);
@@ -122,8 +122,23 @@ function App() {
   );
 
   useEffect(() => {
-    if (imageRef.current) processImage(imageRef.current, target, tolerance);
-  }, [target, tolerance, processImage]);
+    if (!hasImage || !imageRef.current) return;
+
+    const frame = requestAnimationFrame(() => {
+      processImage(imageRef.current, target, tolerance);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [hasImage, target, tolerance, processImage]);
+
+  const setPreviewCanvas = useCallback(
+    (canvas) => {
+      previewCanvasRef.current = canvas;
+      if (canvas && imageRef.current) {
+        processImage(imageRef.current, target, tolerance);
+      }
+    },
+    [processImage, target, tolerance],
+  );
 
   const onFile = (e) => loadImage(e.target.files?.[0]);
 
@@ -318,7 +333,7 @@ function App() {
               <div className="canvas-wrap checkerboard preview-canvas">
                 {hasImage ? (
                   <canvas
-                    ref={previewCanvasRef}
+                    ref={setPreviewCanvas}
                     className="max-h-full max-w-full object-contain"
                   />
                 ) : (
