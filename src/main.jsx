@@ -8,6 +8,8 @@ import {
   Zap,
   Download,
   RotateCcw,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import "./styles.css";
 
@@ -169,25 +171,26 @@ function App() {
   if (tolerance >= 70) tolLabel = "LOOSE";
 
   return (
-    <div className="min-h-screen bg-[#07111f] text-slate-100">
-      <div className="flex min-h-screen">
-        <aside className="w-[310px] shrink-0 border-r border-white/10 bg-[#091525] px-6 py-7 flex flex-col">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/15 text-blue-400 ring-1 ring-blue-400/20">
+    <div className="app-shell min-h-screen text-slate-100">
+      <div className="app-layout flex min-h-screen">
+        <aside className="sidebar flex w-[310px] shrink-0 flex-col px-6 py-7">
+          <div className="brand flex items-center gap-3">
+            <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl">
               <Zap size={22} fill="currentColor" />
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight">PureEraser</div>
-              <div className="text-xs text-slate-500">Background remover</div>
+              <div className="text-xl font-bold tracking-tight text-white">PureEraser</div>
+              <div className="text-xs text-slate-400">Background remover</div>
             </div>
           </div>
 
-          <div className="mt-10 space-y-8">
+          <div className="sidebar-content mt-10 space-y-8">
             <section>
-              <div className="section-title">TARGET COLOR</div>
-              <div className="mt-3 flex items-center gap-3">
+              <div className="section-title">REMOVE COLOR</div>
+              <p className="control-hint">Choose the color you want to make transparent.</p>
+              <div className="color-control mt-3 flex items-center gap-3">
                 <div
-                  className="h-11 w-11 shrink-0 rounded-lg border border-white/15 shadow-inner"
+                  className="color-swatch h-11 w-11 shrink-0 rounded-lg"
                   style={{ background: target }}
                   title={target}
                 />
@@ -211,8 +214,9 @@ function App() {
             <section>
               <div className="section-title flex items-center justify-between">
                 <span>TOLERANCE</span>
-                <span className="font-mono text-blue-400">{tolerance}</span>
+                <span className="value-pill font-mono">{tolerance}</span>
               </div>
+              <p className="control-hint">Fine-tune how much of the background is removed.</p>
               <input
                 aria-label="Tolerance"
                 type="range"
@@ -230,9 +234,9 @@ function App() {
             </section>
           </div>
 
-          <div className="mt-auto">
-            <div className="mb-3 flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2.5 text-sm text-slate-400">
-              <Check size={16} className="text-emerald-400" />
+          <div className="sidebar-bottom mt-auto">
+            <div className="status-card mb-3 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm">
+              <ShieldCheck size={16} className="text-emerald-400" />
               {status}
             </div>
             <button
@@ -254,15 +258,14 @@ function App() {
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col p-6">
-          <div className="mb-5 flex items-center justify-between">
+        <main className="main-shell flex min-w-0 flex-1 flex-col p-6">
+          <div className="topbar mb-5 flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold">Image Workspace</h1>
-              <p className="text-sm text-slate-500">
-                Remove a solid-color background directly in your browser.
-              </p>
+              <div className="eyebrow"><Sparkles size={13} /> QUICK EDITOR</div>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">Make the background disappear.</h1>
+              <p className="mt-1 text-sm text-slate-400">A fast, private way to remove solid-color backgrounds.</p>
             </div>
-            <label className="action-primary cursor-pointer">
+            <label className="action-primary cursor-pointer" title="Upload an image">
               <Upload size={16} />
               Upload Image
               <input
@@ -275,12 +278,12 @@ function App() {
             </label>
           </div>
 
-          <div className="grid min-h-0 flex-1 grid-cols-2 gap-5">
+          <div className="workspace-grid grid min-h-0 flex-1 grid-cols-2 gap-5">
             <Panel
               title="SOURCE IMAGE"
               icon={<ImageIcon size={16} />}
               subtitle={fileName || "Original image"}>
-              <div className="canvas-wrap">
+              <div className="canvas-wrap source-canvas">
                 {hasImage ? (
                   <img
                     src={sourceUrl}
@@ -299,26 +302,30 @@ function App() {
               subtitle={
                 hasImage ? "Transparent background" : "Processed output"
               }>
-              <div className="canvas-wrap checkerboard">
+              <div className="canvas-wrap checkerboard preview-canvas">
                 {hasImage ? (
                   <canvas
                     ref={previewCanvasRef}
                     className="max-h-full max-w-full object-contain"
                   />
                 ) : (
-                  <div className="text-center text-slate-600">
-                    <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-white/5">
+                  <div className="empty-state text-center">
+                    <div className="empty-icon mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full">
                       <ImageIcon size={20} />
                     </div>
-                    <p className="text-sm">
-                      Your transparent preview will appear here.
-                    </p>
+                    <p className="text-sm font-medium text-slate-300">Your transparent preview will appear here.</p>
+                    <p className="mt-1 text-xs text-slate-500">Upload an image to get started.</p>
                   </div>
                 )}
               </div>
             </Panel>
           </div>
           <canvas ref={sourceCanvasRef} className="hidden" />
+          <footer className="app-footer">
+            <span>© {new Date().getFullYear()} Eng. Walid Rashad</span>
+            <span className="footer-dot" />
+            <span>Private by design</span>
+          </footer>
         </main>
       </div>
     </div>
@@ -327,17 +334,17 @@ function App() {
 
 function Panel({ title, icon, subtitle, children }) {
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0a1627]">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-        <div className="flex items-center gap-2 text-xs font-bold tracking-[0.16em] text-slate-300">
+    <section className="panel flex min-h-0 flex-col overflow-hidden rounded-xl">
+      <div className="panel-heading flex items-center justify-between px-4 py-3">
+        <div className="panel-label flex items-center gap-2 text-xs font-bold tracking-[0.16em]">
           {icon}
           <span>{title}</span>
         </div>
-        <span className="max-w-[45%] truncate text-xs text-slate-600">
+        <span className="panel-subtitle max-w-[45%] truncate text-xs">
           {subtitle}
         </span>
       </div>
-      <div className="min-h-0 flex-1 p-4">{children}</div>
+      <div className="panel-body min-h-0 flex-1 p-4">{children}</div>
     </section>
   );
 }
