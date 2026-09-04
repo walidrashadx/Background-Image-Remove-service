@@ -33,6 +33,34 @@ function hexToRgb(hex) {
   };
 }
 
+function sampleBorderColor(img) {
+  const canvas = document.createElement("canvas");
+  const size = 32;
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  context.drawImage(img, 0, 0, size, size);
+  const pixels = context.getImageData(0, 0, size, size).data;
+  const channels = [[], [], []];
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      if (x !== 0 && y !== 0 && x !== size - 1 && y !== size - 1) continue;
+      const index = (y * size + x) * 4;
+      channels[0].push(pixels[index]);
+      channels[1].push(pixels[index + 1]);
+      channels[2].push(pixels[index + 2]);
+    }
+  }
+
+  const median = (channel) => {
+    const sorted = [...channel].sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)];
+  };
+
+  return rgbToHex(median(channels[0]), median(channels[1]), median(channels[2]));
+}
+
 function enqueueIfUnvisited(queue, visited, x, y, width, queueEnd) {
   const position = y * width + x;
   if (visited[position]) return queueEnd;
@@ -77,9 +105,12 @@ function floodFillBackground(src, out, width, height, target, threshold) {
     const distance = distanceFromTarget(pixelIndex);
     if (distance > threshold) continue;
 
-    const alpha = distance <= solidThreshold
-      ? 0
-      : Math.round(src.data[pixelIndex + 3] * ((distance - solidThreshold) / feather));
+    const alpha =
+      distance <= solidThreshold
+        ? 0
+        : Math.round(
+            src.data[pixelIndex + 3] * ((distance - solidThreshold) / feather),
+          );
     out.data[pixelIndex + 3] = clamp(alpha, 0, src.data[pixelIndex + 3]);
 
     if (x > 0) enqueue(x - 1, y);
@@ -99,7 +130,7 @@ function App() {
   const [fileName, setFileName] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [target, setTarget] = useState("#FFFFFF");
-  const [tolerance, setTolerance] = useState(32);
+  const [tolerance, setTolerance] = useState(18);
   const [status, setStatus] = useState("Ready to export");
   const [hasImage, setHasImage] = useState(false);
 
@@ -129,7 +160,7 @@ function App() {
     out.data.set(src.data);
     const t = hexToRgb(color);
 
-    const threshold = (tol / 100) * Math.sqrt(3 * 255 * 255);
+    const threshold = tol * 2.55;
     floodFillBackground(src, out, w, h, t, threshold);
     pctx.putImageData(out, 0, 0);
     setStatus("Ready to export");
@@ -137,7 +168,10 @@ function App() {
 
   const loadImage = useCallback(
     (file) => {
-      if (!file?.type.startsWith("image/")) return;
+      if (!file?.type.startsWith("image/")) {
+        setStatus("Choose an image file");
+        return;
+      }
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
 
       const url = URL.createObjectURL(file);
@@ -149,17 +183,11 @@ function App() {
       const img = new Image();
       img.onload = () => {
         imageRef.current = img;
-        // Automatically sample the top-left pixel as the initial target color.
-        const c = document.createElement("canvas");
-        c.width = 1;
-        c.height = 1;
-        const ctx = c.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
-        const px = ctx.getImageData(0, 0, 1, 1).data;
-        setTarget(rgbToHex(px[0], px[1], px[2]));
+        const sampledColor = sampleBorderColor(img);
+        setTarget(sampledColor);
         setHasImage(true);
         requestAnimationFrame(() =>
-          processImage(img, rgbToHex(px[0], px[1], px[2]), tolerance),
+          processImage(img, sampledColor, tolerance),
         );
       };
       img.onerror = () => {
