@@ -70,21 +70,61 @@ function App() {
 
     const src = sctx.getImageData(0, 0, w, h);
     const out = pctx.createImageData(w, h);
+    out.data.set(src.data);
     const t = hexToRgb(color);
 
-    // Euclidean RGB distance: sqrt((r-tr)^2 + (g-tg)^2 + (b-tb)^2)
     const threshold = (tol / 100) * Math.sqrt(3 * 255 * 255);
+    const feather = Math.max(4, threshold * 0.25);
+    const solidThreshold = Math.max(0, threshold - feather);
+    const visited = new Uint8Array(w * h);
+    const queue = new Int32Array(w * h);
+    let queueStart = 0;
+    let queueEnd = 0;
 
-    for (let i = 0; i < src.data.length; i += 4) {
-      const dr = src.data[i] - t.r;
-      const dg = src.data[i + 1] - t.g;
-      const db = src.data[i + 2] - t.b;
-      const distance = Math.hypot(dr, dg, db);
+    const colorDistance = (pixelIndex) => {
+      const dr = src.data[pixelIndex] - t.r;
+      const dg = src.data[pixelIndex + 1] - t.g;
+      const db = src.data[pixelIndex + 2] - t.b;
+      return Math.hypot(dr, dg, db);
+    };
 
-      out.data[i] = src.data[i];
-      out.data[i + 1] = src.data[i + 1];
-      out.data[i + 2] = src.data[i + 2];
-      out.data[i + 3] = distance <= threshold ? 0 : src.data[i + 3];
+    const enqueue = (x, y) => {
+      const position = y * w + x;
+      if (visited[position]) return;
+      visited[position] = 1;
+      queue[queueEnd++] = position;
+    };
+
+    for (let x = 0; x < w; x += 1) {
+      enqueue(x, 0);
+      enqueue(x, h - 1);
+    }
+    for (let y = 1; y < h - 1; y += 1) {
+      enqueue(0, y);
+      enqueue(w - 1, y);
+    }
+
+    while (queueStart < queueEnd) {
+      const position = queue[queueStart++];
+      const x = position % w;
+      const y = Math.floor(position / w);
+      const pixelIndex = position * 4;
+      const distance = colorDistance(pixelIndex);
+
+      if (distance > threshold) continue;
+
+      const edgeAlpha = distance <= solidThreshold
+        ? 0
+        : Math.round(src.data[pixelIndex + 3] * ((distance - solidThreshold) / feather));
+      out.data[pixelIndex] = src.data[pixelIndex];
+      out.data[pixelIndex + 1] = src.data[pixelIndex + 1];
+      out.data[pixelIndex + 2] = src.data[pixelIndex + 2];
+      out.data[pixelIndex + 3] = clamp(edgeAlpha, 0, src.data[pixelIndex + 3]);
+
+      if (x > 0) enqueue(x - 1, y);
+      if (x < w - 1) enqueue(x + 1, y);
+      if (y > 0) enqueue(x, y - 1);
+      if (y < h - 1) enqueue(x, y + 1);
     }
     pctx.putImageData(out, 0, 0);
     setStatus("Ready to export");
