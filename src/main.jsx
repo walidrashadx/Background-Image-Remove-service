@@ -33,6 +33,62 @@ function hexToRgb(hex) {
   };
 }
 
+function enqueueIfUnvisited(queue, visited, x, y, width, queueEnd) {
+  const position = y * width + x;
+  if (visited[position]) return queueEnd;
+  visited[position] = 1;
+  queue[queueEnd] = position;
+  return queueEnd + 1;
+}
+
+function floodFillBackground(src, out, width, height, target, threshold) {
+  const feather = Math.max(4, threshold * 0.25);
+  const solidThreshold = Math.max(0, threshold - feather);
+  const visited = new Uint8Array(width * height);
+  const queue = new Int32Array(width * height);
+  let queueStart = 0;
+  let queueEnd = 0;
+
+  const enqueue = (x, y) => {
+    queueEnd = enqueueIfUnvisited(queue, visited, x, y, width, queueEnd);
+  };
+  const distanceFromTarget = (pixelIndex) => {
+    return Math.hypot(
+      src.data[pixelIndex] - target.r,
+      src.data[pixelIndex + 1] - target.g,
+      src.data[pixelIndex + 2] - target.b,
+    );
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    enqueue(x, 0);
+    enqueue(x, height - 1);
+  }
+  for (let y = 1; y < height - 1; y += 1) {
+    enqueue(0, y);
+    enqueue(width - 1, y);
+  }
+
+  while (queueStart < queueEnd) {
+    const position = queue[queueStart++];
+    const x = position % width;
+    const y = Math.floor(position / width);
+    const pixelIndex = position * 4;
+    const distance = distanceFromTarget(pixelIndex);
+    if (distance > threshold) continue;
+
+    const alpha = distance <= solidThreshold
+      ? 0
+      : Math.round(src.data[pixelIndex + 3] * ((distance - solidThreshold) / feather));
+    out.data[pixelIndex + 3] = clamp(alpha, 0, src.data[pixelIndex + 3]);
+
+    if (x > 0) enqueue(x - 1, y);
+    if (x < width - 1) enqueue(x + 1, y);
+    if (y > 0) enqueue(x, y - 1);
+    if (y < height - 1) enqueue(x, y + 1);
+  }
+}
+
 function App() {
   const fileRef = useRef(null);
   const sourceCanvasRef = useRef(null);
@@ -74,58 +130,7 @@ function App() {
     const t = hexToRgb(color);
 
     const threshold = (tol / 100) * Math.sqrt(3 * 255 * 255);
-    const feather = Math.max(4, threshold * 0.25);
-    const solidThreshold = Math.max(0, threshold - feather);
-    const visited = new Uint8Array(w * h);
-    const queue = new Int32Array(w * h);
-    let queueStart = 0;
-    let queueEnd = 0;
-
-    const colorDistance = (pixelIndex) => {
-      const dr = src.data[pixelIndex] - t.r;
-      const dg = src.data[pixelIndex + 1] - t.g;
-      const db = src.data[pixelIndex + 2] - t.b;
-      return Math.hypot(dr, dg, db);
-    };
-
-    const enqueue = (x, y) => {
-      const position = y * w + x;
-      if (visited[position]) return;
-      visited[position] = 1;
-      queue[queueEnd++] = position;
-    };
-
-    for (let x = 0; x < w; x += 1) {
-      enqueue(x, 0);
-      enqueue(x, h - 1);
-    }
-    for (let y = 1; y < h - 1; y += 1) {
-      enqueue(0, y);
-      enqueue(w - 1, y);
-    }
-
-    while (queueStart < queueEnd) {
-      const position = queue[queueStart++];
-      const x = position % w;
-      const y = Math.floor(position / w);
-      const pixelIndex = position * 4;
-      const distance = colorDistance(pixelIndex);
-
-      if (distance > threshold) continue;
-
-      const edgeAlpha = distance <= solidThreshold
-        ? 0
-        : Math.round(src.data[pixelIndex + 3] * ((distance - solidThreshold) / feather));
-      out.data[pixelIndex] = src.data[pixelIndex];
-      out.data[pixelIndex + 1] = src.data[pixelIndex + 1];
-      out.data[pixelIndex + 2] = src.data[pixelIndex + 2];
-      out.data[pixelIndex + 3] = clamp(edgeAlpha, 0, src.data[pixelIndex + 3]);
-
-      if (x > 0) enqueue(x - 1, y);
-      if (x < w - 1) enqueue(x + 1, y);
-      if (y > 0) enqueue(x, y - 1);
-      if (y < h - 1) enqueue(x, y + 1);
-    }
+    floodFillBackground(src, out, w, h, t, threshold);
     pctx.putImageData(out, 0, 0);
     setStatus("Ready to export");
   }, []);
@@ -139,6 +144,7 @@ function App() {
       previewUrlRef.current = url;
       setSourceUrl(url);
       setFileName(file.name);
+      setStatus("Loading image...");
 
       const img = new Image();
       img.onload = () => {
@@ -156,6 +162,13 @@ function App() {
           processImage(img, rgbToHex(px[0], px[1], px[2]), tolerance),
         );
       };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        previewUrlRef.current = null;
+        setSourceUrl("");
+        setFileName("");
+        setStatus("Could not load this image");
+      };
       img.src = url;
     },
     [processImage, tolerance],
@@ -169,6 +182,12 @@ function App() {
     });
     return () => cancelAnimationFrame(frame);
   }, [hasImage, target, tolerance, processImage]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
   const setPreviewCanvas = useCallback(
     (canvas) => {
